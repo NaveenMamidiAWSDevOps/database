@@ -8,8 +8,8 @@ BEGIN
     FROM virginia_dev_saayam_rdbms.supporting_languages
     WHERE is_active = TRUE;
 
-    IF active_count <> 12 THEN
-        RAISE EXCEPTION 'Expected 12 active languages, found %',
+    IF active_count <> 13 THEN
+        RAISE EXCEPTION 'Expected 13 active languages, found %',
             active_count;
     END IF;
 
