@@ -79,3 +79,13 @@ jobs:
             -f dml/dml_supporting_lang.sql
           psql -X -v ON_ERROR_STOP=1 \
             -f script-library/tests/2025-10-23_supporting_languages_smoke.sql
+
+      - name: Set up volunteer onboarding tables
+        run: |
+          psql -X -v ON_ERROR_STOP=1 \
+            -f script-library/ci/setup_volunteer_onboarding.sql
+
+      - name: Test volunteer onboarding
+        run: |
+          psql -X -v ON_ERROR_STOP=1 \
+            -f script-library/tests/volunteer_onboarding.sql
