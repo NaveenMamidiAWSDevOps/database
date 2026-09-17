@@ -1,22 +1,36 @@
--- 1) Expect 12 active rows
-SELECT CASE WHEN COUNT(*) = 12 THEN 'OK: 12 languages present'
-            ELSE 'FAIL: expected 12, found ' || COUNT(*) END AS check_languages_count
-FROM virginia_dev_saayam_rdbms.supporting_languages
-WHERE is_active = TRUE;
-
--- 2) Uniqueness of iso_639_1 + locale_code
-SELECT 'OK: uniqueness enforced' AS check_uniqueness
-WHERE NOT EXISTS (
-  SELECT 1 FROM (
-    SELECT iso_639_1, locale_code, COUNT(*) c
+-- Smoke test for the isolated CI database.
+DO $$
+DECLARE
+    active_count INTEGER;
+    rtl_count INTEGER;
+BEGIN
+    SELECT COUNT(*) INTO active_count
     FROM virginia_dev_saayam_rdbms.supporting_languages
-    GROUP BY 1,2
-    HAVING COUNT(*) > 1
-  ) d
-);
+    WHERE is_active = TRUE;
 
--- 3) RTL rows should be 2 (Arabic, Urdu)
-SELECT CASE WHEN COUNT(*) = 2 THEN 'OK: RTL count is 2'
-            ELSE 'WARN: RTL count differs: ' || COUNT(*) END AS check_rtl_count
-FROM virginia_dev_saayam_rdbms.supporting_languages
-WHERE writing_direction = 'RTL';
+    IF active_count <> 12 THEN
+        RAISE EXCEPTION 'Expected 12 active languages, found %',
+            active_count;
+    END IF;
+
+    IF EXISTS (
+        SELECT 1
+        FROM virginia_dev_saayam_rdbms.supporting_languages
+        GROUP BY iso_639_1_code, locale_code
+        HAVING COUNT(*) > 1
+    ) THEN
+        RAISE EXCEPTION 'Duplicate language/locale pairs found';
+    END IF;
+
+    SELECT COUNT(*) INTO rtl_count
+    FROM virginia_dev_saayam_rdbms.supporting_languages
+    WHERE writing_direction = 'RTL';
+
+    IF rtl_count <> 2 THEN
+        RAISE EXCEPTION 'Expected 2 RTL languages, found %',
+            rtl_count;
+    END IF;
+
+    RAISE NOTICE 'PASS: All supporting language checks passed';
+END;
+$$;

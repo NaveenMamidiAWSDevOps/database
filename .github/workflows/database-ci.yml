@@ -1,0 +1,81 @@
+name: Database CI - Supporting Languages
+
+on:
+  push:
+    branches:
+      - feature/database-cicd-naveen
+
+permissions:
+  contents: read
+
+jobs:
+  supporting-languages:
+    if: github.repository == 'NaveenMamidiAWSDevOps/database'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci_only_password
+          POSTGRES_DB: saayam_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d saayam_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      PGHOST: localhost
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: ci_only_password
+      PGDATABASE: saayam_ci
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out branch code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Create test schema
+        run: |
+          psql -X -v ON_ERROR_STOP=1 \
+            -c "CREATE SCHEMA IF NOT EXISTS virginia_dev_saayam_rdbms;"
+
+      - name: Create supporting languages table
+        run: |
+          psql -X -v ON_ERROR_STOP=1 \
+            -f ddl/Tables/ddl_supporting_languages.sql
+
+      - name: Load language seed data
+        run: |
+          psql -X -v ON_ERROR_STOP=1 \
+            -f dml/dml_supporting_lang.sql
+
+      - name: Run smoke test
+        run: |
+          psql -X -v ON_ERROR_STOP=1 \
+            -f script-library/tests/2025-10-23_supporting_languages_smoke.sql
+
+      - name: Verify scripts can run again
+        run: |
+          psql -X -v ON_ERROR_STOP=1 \
+            -f ddl/Tables/ddl_supporting_languages.sql
+          psql -X -v ON_ERROR_STOP=1 \
+            -f dml/dml_supporting_lang.sql
+          psql -X -v ON_ERROR_STOP=1 \
+            -f script-library/tests/2025-10-23_supporting_languages_smoke.sql

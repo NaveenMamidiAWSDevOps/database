@@ -27,7 +27,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS trg_supporting_languages_updated_at ON virginia_dev_saayam_rdbms.supporting_languages;
+DROP TRIGGER IF EXISTS trg_supporting_lang_updated_at ON virginia_dev_saayam_rdbms.supporting_languages;
 
 CREATE TRIGGER trg_supporting_lang_updated_at
 BEFORE UPDATE ON virginia_dev_saayam_rdbms.supporting_languages
